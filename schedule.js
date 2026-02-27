@@ -64,6 +64,22 @@ function dayName(d){
   return ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"][d];
 }
 
+function renderExams(){
+  const el = document.getElementById("examList");
+  if (!el) return;
+
+  if (!Array.isArray(EXAMS) || EXAMS.length === 0){
+    el.textContent = "No hay parciales cargados todavía.";
+    return;
+  }
+
+  const sorted = [...EXAMS].sort((a,b) => (a.date||"").localeCompare(b.date||""));
+  el.innerHTML = sorted.map(e => {
+    const note = e.note ? ` — <span style="opacity:.9">${e.note}</span>` : "";
+    return `<div>• <b>${e.date}</b>: ${e.title}${note}</div>`;
+  }).join("");
+}
+
 function renderTable(){
   const tbody = document.querySelector("#table tbody");
   tbody.innerHTML = "";
