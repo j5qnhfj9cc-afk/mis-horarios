@@ -17,8 +17,7 @@ const SCHEDULE = [
 
 const EXAMS = [
   // Ejemplos (edita tú)
-  { date: "2026-03-12", title: "Parcial Economía", note: "Unidades 1-3" },
-  { date: "2026-03-18", title: "Parcial Bases de datos", note: "Modelo relacional" },
+  { date: "AAAA-MM-DD", title: "Materia", note: "temas" },
 ];
 
 const TZ = "America/Argentina/Mendoza";
