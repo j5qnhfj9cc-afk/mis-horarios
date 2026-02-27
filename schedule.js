@@ -111,6 +111,7 @@ function tick(){
 }
 
 renderTable();
+renderExams();
 tick();
-setInterval(tick, 30 * 1000); // refresca cada 30s
+setInterval(tick, 30 * 1000);
 
