@@ -110,6 +110,27 @@ function tick(){
   }
 }
 
+function applyTheme(theme){
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem("theme", theme);
+  const btn = document.getElementById("themeBtn");
+  if (btn) btn.textContent = theme === "dark" ? "☀️ Claro" : "🌙 Oscuro";
+}
+
+(function initTheme(){
+  const saved = localStorage.getItem("theme");
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  applyTheme(saved || (prefersDark ? "dark" : "light"));
+
+  const btn = document.getElementById("themeBtn");
+  if (btn){
+    btn.addEventListener("click", () => {
+      const current = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+      applyTheme(current === "dark" ? "light" : "dark");
+    });
+  }
+})();
+
 renderTable();
 renderExams();
 tick();
