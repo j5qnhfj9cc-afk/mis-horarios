@@ -19,8 +19,8 @@ const SCHEDULE = [
 // ✅ REUNIONES (mantén HH:MM con 0 a la izquierda)
 const MEETINGS = [
   // Ejemplos (edita)
-  // { day: 1, start: "13:00", end: "13:30", title: "Reunión equipo", place: "Zoom" },
-  // { day: 3, start: "19:30", end: "20:00", title: "Asesoría", place: "Campus" },
+  { day: 4, start: "20:30", end: "22:15", title: "Reunión", place: "Salón" },
+  { day: 7, start: "09:30", end: "11:15", title: "Reunión", place: "Salón" },
 ];
 
 // ✅ Fuente de parciales (JSON) desde tu Worker (URL completa con https)
