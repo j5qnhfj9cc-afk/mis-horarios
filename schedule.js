@@ -1,6 +1,4 @@
-// =====================
-// 1) CONFIG
-// =====================
+
 const TZ = "America/Argentina/Mendoza";
 
 // TU HORARIO (mantén HH:MM con 0 a la izquierda)
@@ -16,32 +14,28 @@ const SCHEDULE = [
   { day: 5, start: "10:30", end: "12:45", course: "Economía", room: "Ambiente 1" },
 ];
 
-// Fuente de parciales (JSON) — la dejamos lista para conectar a tu calendario.
-// Si todavía no tienes backend, deja en null y usa EXAMS_FALLBACK.
-const EXAMS_URL = "horarios-elu.cgyrqz7mnn.workers.dev";
 
-// Fallback si no hay EXAMS_URL (mientras armas lo del calendario del celular)
+const EXAMS_URL = "https://horarios-elu.cgyrqz7mnn.workers.dev/";
+
+
 const EXAMS_FALLBACK = [
-  // { date: "2026-03-12", title: "Parcial Economía", note: "Unidades 1-3" },
+  
 ];
 
-// =====================
-// 2) UTILIDADES DE TIEMPO
-// =====================
+//Funciones de tiempo
+
 function toMinutes(hhmm){
   const [h,m] = hhmm.split(":").map(Number);
   return h*60 + m;
 }
 
 function ymdInTZ(date = new Date()){
-  // YYYY-MM-DD en tu TZ
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: TZ, year:"numeric", month:"2-digit", day:"2-digit"
   }).format(date);
 }
 
 function nowPartsInTZ(){
-  // Hora/min en TZ sin depender del texto del día
   const dt = new Date();
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: TZ, hour:"2-digit", minute:"2-digit", hour12:false
@@ -50,14 +44,12 @@ function nowPartsInTZ(){
   const hour = Number(parts.find(p => p.type === "hour")?.value);
   const minute = Number(parts.find(p => p.type === "minute")?.value);
 
-  // Día semana calculado desde la fecha YMD en TZ
   const [y, mo, da] = ymdInTZ(dt).split("-").map(Number);
   const day = new Date(y, mo - 1, da).getDay(); // 0..6
   return { day, minutes: hour*60 + minute, y, mo, da };
 }
 
 function daysUntil(dateStr){
-  // Cuenta días completos hasta YYYY-MM-DD (en TZ)
   const todayStr = ymdInTZ(new Date());
   const [ty, tm, td] = todayStr.split("-").map(Number);
   const [ey, em, ed] = dateStr.split("-").map(Number);
@@ -73,9 +65,8 @@ function dayName(d){
   return ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"][d];
 }
 
-// =====================
-// 3) ESTADO: EN CLASE O NO
-// =====================
+//Determina si estas en la facu o no
+
 function currentClass(){
   const { day, minutes } = nowPartsInTZ();
   return SCHEDULE.find(s =>
@@ -99,9 +90,8 @@ function tickStatus(){
   }
 }
 
-// =====================
-// 4) RENDER HORARIO
-// =====================
+//Horario
+
 function renderSchedule(){
   const tbody = document.querySelector("#table tbody");
   if (!tbody) return;
@@ -120,25 +110,25 @@ function renderSchedule(){
   }
 }
 
-// =====================
-// 5) PARCIALES: CARGA + PRÓXIMO + CALENDARIO MENSUAL
-// =====================
+// Parciales
+
 let EXAMS = [];
 let viewYear = null;
-let viewMonth = null; // 1..12
+let viewMonth = null; 
 
 async function loadExams(){
   if (EXAMS_URL){
-    const res = await fetch(EXAMS_URL, { cache: "no-store" });
+    
+    const url = EXAMS_URL + (EXAMS_URL.includes("?") ? "&" : "?") + "t=" + Date.now();
+    const res = await fetch(url, { cache: "no-store" });
+
     if (!res.ok) throw new Error("No se pudo cargar EXAMS_URL");
     const data = await res.json();
-    // Espera [{date:"YYYY-MM-DD", title:"...", note:"..."}]
     EXAMS = Array.isArray(data) ? data : [];
   } else {
     EXAMS = EXAMS_FALLBACK;
   }
 
-  // Normaliza y filtra
   EXAMS = EXAMS
     .filter(e => e && typeof e.date === "string" && e.date.length === 10)
     .map(e => ({ date: e.date, title: e.title || "Examen", note: e.note || "" }))
@@ -193,11 +183,11 @@ function renderCalendar(year, month){
   const map = examsByDateMap();
 
   const first = new Date(year, month-1, 1);
-  const startDow = first.getDay(); // 0 dom..6 sáb
+  const startDow = first.getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
   const daysPrevMonth = new Date(year, month-1, 0).getDate();
 
-  // Vamos a pintar SIEMPRE 6 semanas x 7 días = 42 celdas
+
   let cell = 0;
 
   for (let week = 0; week < 6; week++){
@@ -206,24 +196,20 @@ function renderCalendar(year, month){
     for (let dow = 0; dow < 7; dow++){
       const td = document.createElement("td");
 
-      // Determinar qué día va en esta celda
       let d, m = month, y = year;
       let isOtherMonth = false;
 
       if (cell < startDow) {
-        // días del mes anterior
         d = daysPrevMonth - (startDow - 1 - cell);
         m = month - 1; y = year;
         if (m === 0){ m = 12; y--; }
         isOtherMonth = true;
       } else if (cell >= startDow + daysInMonth) {
-        // días del mes siguiente
         d = cell - (startDow + daysInMonth) + 1;
         m = month + 1; y = year;
         if (m === 13){ m = 1; y++; }
         isOtherMonth = true;
       } else {
-        // días del mes actual
         d = cell - startDow + 1;
       }
 
@@ -279,9 +265,8 @@ function initCalendarNav(){
   rerender();
 }
 
-// =====================
-// 6) TEMA OSCURO
-// =====================
+//Modo oscuro
+
 function applyTheme(theme){
   document.documentElement.dataset.theme = theme;
   localStorage.setItem("theme", theme);
@@ -303,19 +288,23 @@ function initTheme(){
   }
 }
 
-// =====================
-// 7) START
-// =====================
+//Inicia
+
 (async function start(){
   initTheme();
   renderSchedule();
   tickStatus();
   setInterval(tickStatus, 30_000);
 
-  await loadExams();
+  try {
+    await loadExams();
+  } catch (e) {
+    
+    EXAMS = EXAMS_FALLBACK;
+  }
+
   renderNextExam();
   initCalendarNav();
 
-  // actualiza contador por si cambia el día
   setInterval(renderNextExam, 60_000);
 })();
