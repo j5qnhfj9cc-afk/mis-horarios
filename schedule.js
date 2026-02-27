@@ -1,4 +1,6 @@
-
+// =====================
+// 1) CONFIG
+// =====================
 const TZ = "America/Argentina/Mendoza";
 
 // TU HORARIO (mantén HH:MM con 0 a la izquierda)
@@ -14,16 +16,24 @@ const SCHEDULE = [
   { day: 5, start: "10:30", end: "12:45", course: "Economía", room: "Ambiente 1" },
 ];
 
-
-const EXAMS_URL = "https://horarios-elu.cgyrqz7mnn.workers.dev/";
-
-
-const EXAMS_FALLBACK = [
-  
+// ✅ REUNIONES (mantén HH:MM con 0 a la izquierda)
+const MEETINGS = [
+  // Ejemplos (edita)
+  // { day: 1, start: "13:00", end: "13:30", title: "Reunión equipo", place: "Zoom" },
+  // { day: 3, start: "19:30", end: "20:00", title: "Asesoría", place: "Campus" },
 ];
 
-//Funciones de tiempo
+// ✅ Fuente de parciales (JSON) desde tu Worker (URL completa con https)
+const EXAMS_URL = "https://horarios-elu.cgyrqz7mnn.workers.dev/";
 
+// Fallback si falla el fetch (opcional)
+const EXAMS_FALLBACK = [
+  // { date: "2026-03-12", title: "Parcial Economía", note: "Unidades 1-3" },
+];
+
+// =====================
+// 2) UTILIDADES DE TIEMPO
+// =====================
 function toMinutes(hhmm){
   const [h,m] = hhmm.split(":").map(Number);
   return h*60 + m;
@@ -65,8 +75,9 @@ function dayName(d){
   return ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"][d];
 }
 
-//Determina si estas en la facu o no
-
+// =====================
+// 3) ESTADO: REUNIÓN / CLASE / LIBRE
+// =====================
 function currentClass(){
   const { day, minutes } = nowPartsInTZ();
   return SCHEDULE.find(s =>
@@ -76,9 +87,25 @@ function currentClass(){
   ) || null;
 }
 
+function currentMeeting(){
+  const { day, minutes } = nowPartsInTZ();
+  return MEETINGS.find(m =>
+    m.day === day &&
+    minutes >= toMinutes(m.start) &&
+    minutes < toMinutes(m.end)
+  ) || null;
+}
+
 function tickStatus(){
   const status = document.getElementById("status");
   if (!status) return;
+
+  const m = currentMeeting();
+  if (m){
+    status.className = "status in";
+    status.textContent = `🤝 Estoy en reunión: ${m.title} (${m.start}–${m.end})`;
+    return;
+  }
 
   const c = currentClass();
   if (c){
@@ -86,12 +113,13 @@ function tickStatus(){
     status.textContent = `✅ Estoy en clases: ${c.course} (${c.start}–${c.end})`;
   } else {
     status.className = "status out";
-    status.textContent = "🟡 No estoy en clases ahora";
+    status.textContent = "🟡 No estoy en clases ni en reunión ahora";
   }
 }
 
-//Horario
-
+// =====================
+// 4) RENDER HORARIO + REUNIONES
+// =====================
 function renderSchedule(){
   const tbody = document.querySelector("#table tbody");
   if (!tbody) return;
@@ -110,18 +138,43 @@ function renderSchedule(){
   }
 }
 
-// Parciales
+function renderMeetings(){
+  const tbody = document.querySelector("#meetingsTable tbody");
+  if (!tbody) return;
 
+  tbody.innerHTML = "";
+
+  if (!MEETINGS.length){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="4" style="opacity:.7;">No hay reuniones cargadas.</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  const sorted = [...MEETINGS].sort((a,b) => a.day - b.day || toMinutes(a.start) - toMinutes(b.start));
+  for (const m of sorted){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${dayName(m.day)}</td>
+      <td>${m.start}–${m.end}</td>
+      <td>${m.title}</td>
+      <td>${m.place || "-"}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+// =====================
+// 5) PARCIALES: CARGA + PRÓXIMO + CALENDARIO MENSUAL
+// =====================
 let EXAMS = [];
 let viewYear = null;
-let viewMonth = null; 
+let viewMonth = null; // 1..12
 
 async function loadExams(){
   if (EXAMS_URL){
-    
     const url = EXAMS_URL + (EXAMS_URL.includes("?") ? "&" : "?") + "t=" + Date.now();
     const res = await fetch(url, { cache: "no-store" });
-
     if (!res.ok) throw new Error("No se pudo cargar EXAMS_URL");
     const data = await res.json();
     EXAMS = Array.isArray(data) ? data : [];
@@ -186,7 +239,6 @@ function renderCalendar(year, month){
   const startDow = first.getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
   const daysPrevMonth = new Date(year, month-1, 0).getDate();
-
 
   let cell = 0;
 
@@ -265,8 +317,9 @@ function initCalendarNav(){
   rerender();
 }
 
-//Modo oscuro
-
+// =====================
+// 6) TEMA OSCURO
+// =====================
 function applyTheme(theme){
   document.documentElement.dataset.theme = theme;
   localStorage.setItem("theme", theme);
@@ -288,18 +341,21 @@ function initTheme(){
   }
 }
 
-//Inicia
-
+// =====================
+// 7) START
+// =====================
 (async function start(){
   initTheme();
+
   renderSchedule();
+  renderMeetings();
+
   tickStatus();
   setInterval(tickStatus, 30_000);
 
   try {
     await loadExams();
   } catch (e) {
-    
     EXAMS = EXAMS_FALLBACK;
   }
 
