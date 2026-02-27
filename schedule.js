@@ -15,6 +15,12 @@ const SCHEDULE = [
   { day: 5, start: "10:30", end: "12:45", course: "Economía", room: "Ambiente 1" },
 ];
 
+const EXAMS = [
+  // Ejemplos (edita tú)
+  { date: "2026-03-12", title: "Parcial Economía", note: "Unidades 1-3" },
+  { date: "2026-03-18", title: "Parcial Bases de datos", note: "Modelo relacional" },
+];
+
 const TZ = "America/Argentina/Mendoza";
 
 function toMinutes(hhmm){
