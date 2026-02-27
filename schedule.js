@@ -1,9 +1,10 @@
-// Horario: 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
-// Formato de hora 24h: "HH:MM"
-// timezone: America/Argentina/Mendoza
+// =====================
+// 1) CONFIG
+// =====================
+const TZ = "America/Argentina/Mendoza";
 
+// TU HORARIO (mantén HH:MM con 0 a la izquierda)
 const SCHEDULE = [
-  // EJEMPLOS (cámbialos por los tuyos)
   { day: 1, start: "08:00", end: "10:00", course: "Ingles", room: "Ambiente 1" },
   { day: 1, start: "10:30", end: "12:45", course: "Comunicación de datos", room: "Ambiente 1" },
   { day: 2, start: "08:00", end: "10:15", course: "Economía", room: "Ambiente 1"},
@@ -15,72 +16,95 @@ const SCHEDULE = [
   { day: 5, start: "10:30", end: "12:45", course: "Economía", room: "Ambiente 1" },
 ];
 
-const EXAMS = [
-  // Ejemplos (edita tú)
-  { date: "AAAA-MM-DD", title: "Materia", note: "temas" },
+// Fuente de parciales (JSON) — la dejamos lista para conectar a tu calendario.
+// Si todavía no tienes backend, deja en null y usa EXAMS_FALLBACK.
+const EXAMS_URL = null;
+
+// Fallback si no hay EXAMS_URL (mientras armas lo del calendario del celular)
+const EXAMS_FALLBACK = [
+  // { date: "2026-03-12", title: "Parcial Economía", note: "Unidades 1-3" },
 ];
 
-const TZ = "America/Argentina/Mendoza";
-
+// =====================
+// 2) UTILIDADES DE TIEMPO
+// =====================
 function toMinutes(hhmm){
   const [h,m] = hhmm.split(":").map(Number);
   return h*60 + m;
 }
 
-function nowInTZ(){
-  // Convertimos "ahora" a partes de tiempo en la zona indicada
-  const parts = new Intl.DateTimeFormat("es-AR", {
-    timeZone: TZ,
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false
-  }).formatToParts(new Date());
-
-  const get = (type) => parts.find(p => p.type === type)?.value;
-
-  // weekday: dom, lun, mar, mié, jue, vie, sáb (varía por locale pero funciona en es-AR)
-  const wd = (get("weekday") || "").toLowerCase();
-  const map = { "dom":0, "lun":1, "mar":2, "mié":3, "mie":3, "jue":4, "vie":5, "sáb":6, "sab":6 };
-
-  const day = map[wd] ?? new Date().getDay();
-  const hour = Number(get("hour"));
-  const minute = Number(get("minute"));
-  return { day, minutes: hour*60 + minute };
+function ymdInTZ(date = new Date()){
+  // YYYY-MM-DD en tu TZ
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ, year:"numeric", month:"2-digit", day:"2-digit"
+  }).format(date);
 }
 
-function isInClass(){
-  const { day, minutes } = nowInTZ();
-  const current = SCHEDULE.find(s =>
-    s.day === day &&
-    minutes >= toMinutes(s.start) &&
-    minutes < toMinutes(s.end)
-  );
-  return current || null;
+function nowPartsInTZ(){
+  // Hora/min en TZ sin depender del texto del día
+  const dt = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ, hour:"2-digit", minute:"2-digit", hour12:false
+  }).formatToParts(dt);
+
+  const hour = Number(parts.find(p => p.type === "hour")?.value);
+  const minute = Number(parts.find(p => p.type === "minute")?.value);
+
+  // Día semana calculado desde la fecha YMD en TZ
+  const [y, mo, da] = ymdInTZ(dt).split("-").map(Number);
+  const day = new Date(y, mo - 1, da).getDay(); // 0..6
+  return { day, minutes: hour*60 + minute, y, mo, da };
+}
+
+function daysUntil(dateStr){
+  // Cuenta días completos hasta YYYY-MM-DD (en TZ)
+  const todayStr = ymdInTZ(new Date());
+  const [ty, tm, td] = todayStr.split("-").map(Number);
+  const [ey, em, ed] = dateStr.split("-").map(Number);
+
+  const today = new Date(ty, tm-1, td);
+  const exam = new Date(ey, em-1, ed);
+
+  const ms = exam.getTime() - today.getTime();
+  return Math.ceil(ms / (1000*60*60*24));
 }
 
 function dayName(d){
   return ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"][d];
 }
 
-function renderExams(){
-  const el = document.getElementById("examList");
-  if (!el) return;
-
-  if (!Array.isArray(EXAMS) || EXAMS.length === 0){
-    el.textContent = "No hay parciales cargados todavía.";
-    return;
-  }
-
-  const sorted = [...EXAMS].sort((a,b) => (a.date||"").localeCompare(b.date||""));
-  el.innerHTML = sorted.map(e => {
-    const note = e.note ? ` — <span style="opacity:.9">${e.note}</span>` : "";
-    return `<div>• <b>${e.date}</b>: ${e.title}${note}</div>`;
-  }).join("");
+// =====================
+// 3) ESTADO: EN CLASE O NO
+// =====================
+function currentClass(){
+  const { day, minutes } = nowPartsInTZ();
+  return SCHEDULE.find(s =>
+    s.day === day &&
+    minutes >= toMinutes(s.start) &&
+    minutes < toMinutes(s.end)
+  ) || null;
 }
 
-function renderTable(){
+function tickStatus(){
+  const status = document.getElementById("status");
+  if (!status) return;
+
+  const c = currentClass();
+  if (c){
+    status.className = "status in";
+    status.textContent = `✅ Estoy en clases: ${c.course} (${c.start}–${c.end})`;
+  } else {
+    status.className = "status out";
+    status.textContent = "🟡 No estoy en clases ahora";
+  }
+}
+
+// =====================
+// 4) RENDER HORARIO
+// =====================
+function renderSchedule(){
   const tbody = document.querySelector("#table tbody");
+  if (!tbody) return;
   tbody.innerHTML = "";
 
   const sorted = [...SCHEDULE].sort((a,b) => a.day - b.day || toMinutes(a.start) - toMinutes(b.start));
@@ -96,19 +120,147 @@ function renderTable(){
   }
 }
 
-function tick(){
-  const status = document.getElementById("status");
-  const current = isInClass();
+// =====================
+// 5) PARCIALES: CARGA + PRÓXIMO + CALENDARIO MENSUAL
+// =====================
+let EXAMS = [];
+let viewYear = null;
+let viewMonth = null; // 1..12
 
-  if (current){
-    status.className = "status in";
-    status.textContent = `✅ Estoy en clases: ${current.course} (${current.start}–${current.end})`;
+async function loadExams(){
+  if (EXAMS_URL){
+    const res = await fetch(EXAMS_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("No se pudo cargar EXAMS_URL");
+    const data = await res.json();
+    // Espera [{date:"YYYY-MM-DD", title:"...", note:"..."}]
+    EXAMS = Array.isArray(data) ? data : [];
   } else {
-    status.className = "status out";
-    status.textContent = "🟡 No estoy en clases ahora";
+    EXAMS = EXAMS_FALLBACK;
+  }
+
+  // Normaliza y filtra
+  EXAMS = EXAMS
+    .filter(e => e && typeof e.date === "string" && e.date.length === 10)
+    .map(e => ({ date: e.date, title: e.title || "Examen", note: e.note || "" }))
+    .sort((a,b) => a.date.localeCompare(b.date));
+}
+
+function getNextExam(){
+  const today = ymdInTZ(new Date());
+  return EXAMS.find(e => e.date >= today) || null;
+}
+
+function renderNextExam(){
+  const box = document.getElementById("nextExam");
+  const meta = document.getElementById("nextExamMeta");
+  if (!box || !meta) return;
+
+  const next = getNextExam();
+  if (!next){
+    box.textContent = "No hay parciales cargados";
+    meta.textContent = "Agrega parciales en tu calendario y se verán aquí.";
+    return;
+  }
+
+  const d = daysUntil(next.date);
+  box.textContent = d === 0
+    ? `📌 Hoy: ${next.title}`
+    : `⏳ Faltan ${d} día${d===1?"":"s"} para: ${next.title}`;
+
+  meta.textContent = `${next.date}${next.note ? " — " + next.note : ""}`;
+}
+
+function examsByDateMap(){
+  const map = new Map();
+  for (const e of EXAMS){
+    if (!map.has(e.date)) map.set(e.date, []);
+    map.get(e.date).push(e);
+  }
+  return map;
+}
+
+function renderCalendar(year, month){
+  // month: 1..12
+  const title = document.getElementById("calMonthTitle");
+  const body = document.getElementById("calendarBody");
+  if (!title || !body) return;
+
+  const monthName = new Intl.DateTimeFormat("es-AR", { month:"long" })
+    .format(new Date(year, month-1, 1));
+  title.textContent = `${monthName[0].toUpperCase() + monthName.slice(1)} ${year}`;
+
+  body.innerHTML = "";
+
+  const firstDay = new Date(year, month-1, 1);
+  const startDow = firstDay.getDay(); // 0..6 (Dom..Sáb)
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  const map = examsByDateMap();
+
+  let day = 1;
+  for (let week = 0; week < 6; week++){
+    const tr = document.createElement("tr");
+    for (let dow = 0; dow < 7; dow++){
+      const td = document.createElement("td");
+      if (week === 0 && dow < startDow){
+        td.innerHTML = "";
+      } else if (day > daysInMonth){
+        td.innerHTML = "";
+      } else {
+        const dd = String(day).padStart(2, "0");
+        const mm = String(month).padStart(2, "0");
+        const dateStr = `${year}-${mm}-${dd}`;
+        const items = map.get(dateStr) || [];
+
+        td.innerHTML = `<div class="daynum">${day}</div>` +
+          items.map(e => `<span class="chip">📘 ${escapeHtml(e.title)}</span>`).join("");
+
+        day++;
+      }
+      tr.appendChild(td);
+    }
+    body.appendChild(tr);
+    if (day > daysInMonth) break;
   }
 }
 
+function escapeHtml(s){
+  return String(s)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function initCalendarNav(){
+  const prev = document.getElementById("prevMonth");
+  const next = document.getElementById("nextMonth");
+
+  const { y, mo } = nowPartsInTZ();
+  viewYear = y;
+  viewMonth = mo;
+
+  const rerender = () => renderCalendar(viewYear, viewMonth);
+
+  if (prev) prev.addEventListener("click", () => {
+    viewMonth--;
+    if (viewMonth === 0){ viewMonth = 12; viewYear--; }
+    rerender();
+  });
+
+  if (next) next.addEventListener("click", () => {
+    viewMonth++;
+    if (viewMonth === 13){ viewMonth = 1; viewYear++; }
+    rerender();
+  });
+
+  rerender();
+}
+
+// =====================
+// 6) TEMA OSCURO
+// =====================
 function applyTheme(theme){
   document.documentElement.dataset.theme = theme;
   localStorage.setItem("theme", theme);
@@ -116,7 +268,7 @@ function applyTheme(theme){
   if (btn) btn.textContent = theme === "dark" ? "☀️ Claro" : "🌙 Oscuro";
 }
 
-(function initTheme(){
+function initTheme(){
   const saved = localStorage.getItem("theme");
   const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   applyTheme(saved || (prefersDark ? "dark" : "light"));
@@ -128,10 +280,21 @@ function applyTheme(theme){
       applyTheme(current === "dark" ? "light" : "dark");
     });
   }
+}
+
+// =====================
+// 7) START
+// =====================
+(async function start(){
+  initTheme();
+  renderSchedule();
+  tickStatus();
+  setInterval(tickStatus, 30_000);
+
+  await loadExams();
+  renderNextExam();
+  initCalendarNav();
+
+  // actualiza contador por si cambia el día
+  setInterval(renderNextExam, 60_000);
 })();
-
-renderTable();
-renderExams();
-tick();
-setInterval(tick, 30 * 1000);
-
