@@ -4,14 +4,14 @@
 
 const SCHEDULE = [
   // EJEMPLOS (cámbialos por los tuyos)
-  { day: 1, start: "8:00", end: "10:00", course: "Ingles", room: "Ambiente 1" },
+  { day: 1, start: "08:00", end: "10:00", course: "Ingles", room: "Ambiente 1" },
   { day: 1, start: "10:30", end: "12:45", course: "Comunicación de datos", room: "Ambiente 1" },
-  { day: 2, start: "8:00", end: "10:15", course: "Economía", room: "Ambiente 1"},
+  { day: 2, start: "08:00", end: "10:15", course: "Economía", room: "Ambiente 1"},
   { day: 2, start: "16:00", end: "19:00", course: "Bases de datos", room: "Ambiente 1"},
-  { day: 3, start: "8:00", end: "12:45", course: "Diseño de sistemas de información", room: "Ambiente 1" },
+  { day: 3, start: "08:00", end: "12:45", course: "Diseño de sistemas de información", room: "Ambiente 1" },
   { day: 3, start: "16:00", end: "19:00", course: "Desarrollo de software", room: "Ambiente 1" },
-  { day: 4, start: "8:00", end: "11:15", course: "Análisis numérico", room: "Ambiente 1" },
-  { day: 5, start: "8:00", end: "10:00", course: "Ingles", room: "Ambiente 1" },
+  { day: 4, start: "08:00", end: "11:15", course: "Análisis numérico", room: "Ambiente 1" },
+  { day: 5, start: "08:00", end: "10:00", course: "Ingles", room: "Ambiente 1" },
   { day: 5, start: "10:30", end: "12:45", course: "Economía", room: "Ambiente 1" },
 ];
 
