@@ -103,17 +103,17 @@ function tickStatus(){
   const m = currentMeeting();
   if (m){
     status.className = "status in";
-    status.textContent = `🤝 Estoy en reunión: ${m.title} (${m.start}–${m.end})`;
+    status.textContent = `🤵🏻‍♂️ Estoy en reunión: ${m.title} (${m.start}–${m.end})`;
     return;
   }
 
   const c = currentClass();
   if (c){
     status.className = "status in";
-    status.textContent = `✅ Estoy en clases: ${c.course} (${c.start}–${c.end})`;
+    status.textContent = `📖 Estoy en clases: ${c.course} (${c.start}–${c.end})`;
   } else {
     status.className = "status out";
-    status.textContent = "🟡 No estoy en clases ni en reunión ahora";
+    status.textContent = "✅ Estoy libre";
   }
 }
 
