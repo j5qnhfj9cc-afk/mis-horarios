@@ -18,7 +18,7 @@ const SCHEDULE = [
 
 // Fuente de parciales (JSON) — la dejamos lista para conectar a tu calendario.
 // Si todavía no tienes backend, deja en null y usa EXAMS_FALLBACK.
-const EXAMS_URL = null;
+const EXAMS_URL = "https://empty-morning-9f11.cgyrqz7mnn.workers.dev/";
 
 // Fallback si no hay EXAMS_URL (mientras armas lo del calendario del celular)
 const EXAMS_FALLBACK = [
