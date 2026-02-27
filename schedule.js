@@ -180,7 +180,6 @@ function examsByDateMap(){
 }
 
 function renderCalendar(year, month){
-  // month: 1..12
   const title = document.getElementById("calMonthTitle");
   const body = document.getElementById("calendarBody");
   if (!title || !body) return;
@@ -191,36 +190,58 @@ function renderCalendar(year, month){
 
   body.innerHTML = "";
 
-  const firstDay = new Date(year, month-1, 1);
-  const startDow = firstDay.getDay(); // 0..6 (Dom..Sáb)
-  const daysInMonth = new Date(year, month, 0).getDate();
-
   const map = examsByDateMap();
 
-  let day = 1;
+  const first = new Date(year, month-1, 1);
+  const startDow = first.getDay(); // 0 dom..6 sáb
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const daysPrevMonth = new Date(year, month-1, 0).getDate();
+
+  // Vamos a pintar SIEMPRE 6 semanas x 7 días = 42 celdas
+  let cell = 0;
+
   for (let week = 0; week < 6; week++){
     const tr = document.createElement("tr");
+
     for (let dow = 0; dow < 7; dow++){
       const td = document.createElement("td");
-      if (week === 0 && dow < startDow){
-        td.innerHTML = "";
-      } else if (day > daysInMonth){
-        td.innerHTML = "";
+
+      // Determinar qué día va en esta celda
+      let d, m = month, y = year;
+      let isOtherMonth = false;
+
+      if (cell < startDow) {
+        // días del mes anterior
+        d = daysPrevMonth - (startDow - 1 - cell);
+        m = month - 1; y = year;
+        if (m === 0){ m = 12; y--; }
+        isOtherMonth = true;
+      } else if (cell >= startDow + daysInMonth) {
+        // días del mes siguiente
+        d = cell - (startDow + daysInMonth) + 1;
+        m = month + 1; y = year;
+        if (m === 13){ m = 1; y++; }
+        isOtherMonth = true;
       } else {
-        const dd = String(day).padStart(2, "0");
-        const mm = String(month).padStart(2, "0");
-        const dateStr = `${year}-${mm}-${dd}`;
-        const items = map.get(dateStr) || [];
-
-        td.innerHTML = `<div class="daynum">${day}</div>` +
-          items.map(e => `<span class="chip">📘 ${escapeHtml(e.title)}</span>`).join("");
-
-        day++;
+        // días del mes actual
+        d = cell - startDow + 1;
       }
+
+      const dd = String(d).padStart(2, "0");
+      const mm = String(m).padStart(2, "0");
+      const dateStr = `${y}-${mm}-${dd}`;
+      const items = map.get(dateStr) || [];
+
+      const faded = isOtherMonth ? ' style="opacity:.45"' : "";
+      td.innerHTML =
+        `<div class="daynum"${faded}>${d}</div>` +
+        items.map(e => `<span class="chip">📘 ${escapeHtml(e.title)}</span>`).join("");
+
       tr.appendChild(td);
+      cell++;
     }
+
     body.appendChild(tr);
-    if (day > daysInMonth) break;
   }
 }
 
