@@ -16,6 +16,7 @@
       --in-bg:#0f2a1a; --in-border:#2f8f57;
       --out-bg:#2a1b0f; --out-border:#b8742c;
     }
+
     body{background:var(--bg); color:var(--text); font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial; margin:24px; line-height:1.35}
     .card{max-width:920px; margin:auto; padding:18px; border:1px solid var(--border); background:var(--card); border-radius:14px}
     .status{font-size:22px; font-weight:800; padding:12px 14px; border-radius:12px; margin:12px 0 10px}
@@ -51,7 +52,7 @@
     .cal{width:100%; border-collapse:collapse}
     .cal th,.cal td{border:1px solid rgba(255,255,255,0.08); padding:8px; vertical-align:top}
     .cal th{background:var(--thead); font-size:12px; color:var(--muted)}
-    .cal .daynum{font-weight:700; font-size:12px; opacity:.85}
+    .daynum{font-weight:700; font-size:12px; opacity:.85}
     .chip{display:block; margin-top:6px; padding:6px 8px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,0.03); font-size:12px}
   </style>
 </head>
@@ -63,7 +64,9 @@
       <button id="themeBtn" type="button">🌙 Oscuro</button>
     </div>
 
+    <!-- Estado (lo llena schedule.js) -->
     <div id="status" class="status out">Cargando…</div>
+
     <div class="small" style="margin-bottom:10px;">
       Zona horaria: <code>America/Argentina/Mendoza</code>
     </div>
@@ -71,6 +74,7 @@
     <!-- 1) Horario semanal desplegable -->
     <details id="scheduleDetails" open class="panel">
       <summary style="cursor:pointer; font-weight:800; margin:6px 0;">1) Horario semanal</summary>
+
       <table id="table">
         <thead>
           <tr><th>Día</th><th>Bloque</th><th>Materia</th><th>Ambiente</th></tr>
@@ -111,6 +115,22 @@
         </div>
       </div>
     </div>
+
+    <!-- Reuniones (al final) -->
+    <details id="meetingsDetails" open class="panel" style="margin-top:14px;">
+      <summary style="cursor:pointer; font-weight:800; margin:6px 0;">Reuniones</summary>
+
+      <table id="meetingsTable">
+        <thead>
+          <tr><th>Día</th><th>Bloque</th><th>Reunión</th><th>Lugar</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div class="small" style="margin-top:8px;">
+        Tip: edita las reuniones en <code>MEETINGS</code> dentro de <code>schedule.js</code>.
+      </div>
+    </details>
   </div>
 
   <script src="schedule.js"></script>
