@@ -19,7 +19,7 @@ const SCHEDULE = [
 // ✅ REUNIONES (mantén HH:MM con 0 a la izquierda)
 const MEETINGS = [
   // Ejemplos (edita)
-  { day: 4, start: "20:30", end: "22:15", title: "Reunión", place: "Salón" },
+  { day: 2, start: "20:30", end: "22:15", title: "Reunión", place: "Salón" },
   { day: 0, start: "09:30", end: "11:15", title: "Reunión", place: "Salón" },
 ];
 
